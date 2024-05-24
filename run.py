@@ -1,21 +1,10 @@
-import zipfile, os
+import zipfile, os, threading
 from os import path
 import requests
 import pandas as pd
 import pyarrow.parquet as pq
 import pyarrow as pa
-
-
-def rw():
-    print("reading...")
-    df = pd.read_csv("2024-01-01.csv")
-    tbl = pa.Table.from_pandas(df)
-    print("read done.")
-    pq.write_table(tbl, "example.parquet", write_page_index=False)
-
-    print("writing...")
-    df = pq.read_table("example.parquet").to_pandas()
-    df.to_csv("dank.csv")
+import concurrent.futures
 
 
 def download(url: str):
@@ -58,22 +47,13 @@ def full_run(fn: str):
             os.remove(csvfile)
 
 
-for y in range(2016, 2025):
+pool = concurrent.futures.ThreadPoolExecutor(max_workers=8)
+for y in range(2018, 2025):
     for q in range(1, 5):
         if y == 2024 and q != 1:
             continue
         fn = f"data_Q{q}_{y}.zip"
-        print(fn)
-full_run("data_Q1_2024.zip")
+        pool.submit(lambda: full_run(fn))
 
-
-# df1 = pd.read_csv("2024-01-01.csv")
-# print(df1)
-
-# df2 = pq.read_table("example.parquet").to_pandas()
-# print(df2)
-
-# s1 = pd.DataFrame(df1, columns=['smart_100_raw'])
-# s2 = pd.DataFrame(df2, columns=['smart_100_raw'])
-# print(s1[1:10])
-# print(s2[1:10])
+pool.shutdown(wait=True)
+print("Main thread sending it")
