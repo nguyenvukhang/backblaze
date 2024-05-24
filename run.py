@@ -1,15 +1,14 @@
-import zipfile, os, threading
+import zipfile, os
 from os import path
 import requests
 import pandas as pd
 import pyarrow.parquet as pq
 import pyarrow as pa
-import concurrent.futures
 from multiprocessing.pool import ThreadPool
+from tqdm import tqdm
 
 
 def download(url: str):
-    from tqdm import tqdm
 
     filepath = path.join("output/.cache", path.basename(url))
     if path.isfile(filepath):
@@ -56,6 +55,5 @@ for y in range(2018, 2025):
             continue
         zips.append(f"data_Q{q}_{y}.zip")
 
-pool.map(full_run, zips)
-
-print("Main thread sending it")
+with ThreadPool(8) as p:
+    tqdm(pool.map(full_run, zips), total=len(zips))
