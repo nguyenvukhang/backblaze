@@ -1,3 +1,5 @@
+current: dl
+
 verify:
 	python3 verify.py
 
