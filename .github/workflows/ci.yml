@@ -7,6 +7,21 @@ permissions:
   contents: write
 
 jobs:
+  pre:
+    name: Preprocessing
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: echo "matrix=$(jq -rc . .github/workflows/matrix.json)" >> $GITHUB_OUTPUT
+        id: matrix
+
+      - name: Enumerate outputs
+        run: |
+          echo 'matrix:    ${{ steps.matrix.outputs.matrix }}'
+
   main:
     timeout-minutes: 5
     runs-on: ubuntu-22.04
@@ -15,7 +30,7 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: install pip packages
         run: pip install pandas pyarrow
