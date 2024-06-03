@@ -38,7 +38,7 @@ jobs:
       - run: curl -fLO ${{ matrix.url }}
       - run: python3 build_one_quarter.py ${{ matrix.url }}
       - run: rm -f *.zip
-      - run: zip ${{ matrix.file_stem }}.zip output/*.parquet
+      - run: zip ${{ matrix.file_stem }}.zip *.parquet
 
       - name: release files
         uses: softprops/action-gh-release@v2

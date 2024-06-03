@@ -26,11 +26,6 @@ def download_file(url) -> str:
 fp = path.basename(url)
 
 
-try:
-    os.mkdir("output")
-except:
-    pass
-
 # member is guaranteed to end with ".csv" here.
 members = []
 with ZipFile(fp, "r") as z:
@@ -47,5 +42,5 @@ for member in members:
         os.remove(member)
         pq.write_table(
             pa.Table.from_pandas(df),
-            path.join("output", path.basename(member)[:-4] + ".parquet"),
+            path.basename(member)[:-4] + ".parquet",
         )

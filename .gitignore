@@ -2,5 +2,4 @@
 *.csv
 *.parquet
 *.zip
-/output/
 node_modules/
