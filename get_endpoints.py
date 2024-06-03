@@ -39,5 +39,6 @@ with ThreadPool(4) as pool:
     jobs = [(potential_urls, i) for i in range(len(potential_urls))]
     pool.starmap(check_url, jobs)
 
-output = {"urls": [x for x in potential_urls if x is not None]}
+output = {"url": [x for x in potential_urls if x is not None]}
+output['url'] = output['url'][0:1]
 print(json.dumps(output))

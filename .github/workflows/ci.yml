@@ -14,10 +14,8 @@ jobs:
       matrix: ${{ steps.matrix.outputs.matrix }}
     steps:
       - uses: actions/checkout@v4
-
       - run: echo "matrix=$(python3 get_endpoints.py)" >> $GITHUB_OUTPUT
         id: matrix
-
       - name: Enumerate outputs
         run: |
           echo 'matrix:    ${{ steps.matrix.outputs.matrix }}'
@@ -31,17 +29,15 @@ jobs:
       matrix: ${{ fromJson(needs.pre.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: install pip packages
-        run: pip install pandas pyarrow
-
-      # - name: release files
-      #   uses: softprops/action-gh-release@v2
-      #   if: startsWith(github.ref, 'refs/tags/')
+      # - uses: actions/setup-python@v5
       #   with:
-      #     tag_name: ${{ github.ref_name }}
-      #     files: /*.parquet
+      #     python-version: "3.11"
+      - run: pip install pandas pyarrow
+      - run: python3 build_one_quarter.py ${{ matrix.url }}
+
+      - name: release files
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: '*.parquet'
