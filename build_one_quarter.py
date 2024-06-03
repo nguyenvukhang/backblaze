@@ -26,20 +26,26 @@ def download_file(url) -> str:
 fp = path.basename(url)
 
 
+try:
+    os.mkdir("output")
+except:
+    pass
+
+# member is guaranteed to end with ".csv" here.
+members = []
 with ZipFile(fp, "r") as z:
-    # dfs = []
     for member in z.namelist():
         if member.startswith("__MACOSX") or not member.endswith(".csv"):
             continue
-        # member is guaranteed to end with ".csv" here.
-        print("member:", member)
-        b: bytes = z.read(member)
+        members.append(member)
+
+for member in members:
+    print("member:", member)
+    with ZipFile(fp, "r") as z:
         z.extract(member)
         df = pd.read_csv(member, delimiter=",", index_col=0)
         os.remove(member)
-        pq.write_table(pa.Table.from_pandas(df), member[:-4] + ".parquet")
-
-        # dfs.append(df)
-    # df = pd.concat(dfs)
-    # tbl = pa.Table.from_pandas(df)
-    # pq.write_table(tbl, fp[:-4] + ".parquet")
+        pq.write_table(
+            pa.Table.from_pandas(df),
+            path.join("output", path.basename(member)[:-4] + ".parquet"),
+        )

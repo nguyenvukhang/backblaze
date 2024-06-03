@@ -1,6 +1,7 @@
 from datetime import datetime
 from multiprocessing.pool import ThreadPool
 import requests, json
+from os import path
 
 
 def dl_url(year: int, quarter: int):
@@ -23,5 +24,14 @@ with ThreadPool(4) as pool:
     jobs = [(potential_urls, i) for i in range(len(potential_urls))]
     pool.starmap(check_url, jobs)
 
-output = {"url": [x for x in potential_urls if x is not None]}
+output = {
+    "include": [
+        {
+            "url": x,
+            "file_stem": path.basename(x)[:-4],
+        }
+        for x in potential_urls
+        if x is not None
+    ],
+}
 print(json.dumps(output))

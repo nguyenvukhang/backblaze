@@ -22,7 +22,7 @@ jobs:
 
   main:
     needs: [pre]
-    timeout-minutes: 5
+    timeout-minutes: 20
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
@@ -35,10 +35,11 @@ jobs:
       - run: pip install pandas pyarrow
       - run: curl -fLO ${{ matrix.url }}
       - run: python3 build_one_quarter.py ${{ matrix.url }}
+      - run: zip -r output ${{ matrix.file_stem }}.zip
 
       - name: release files
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
           tag_name: ${{ github.ref_name }}
-          files: '*.parquet'
+          files: ${{ matrix.file_stem }}.zip
