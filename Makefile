@@ -1,4 +1,7 @@
-current: join-pq
+current: ci
+
+ci:
+	python3 get_endpoints.py
 
 join-pq:
 	python3 join-pq.py
