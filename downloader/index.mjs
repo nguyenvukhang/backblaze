@@ -1,7 +1,17 @@
 import { Octokit } from 'octokit'
 import { spawnSync } from 'child_process'
+import { readFileSync } from 'fs'
 
-const gh = new Octokit()
+function loadToken() {
+  try {
+    return readFileSync('.env', 'utf8')
+  } catch {
+    return null
+  }
+}
+
+const token = loadToken()
+const gh = new Octokit({ auth: token })
 
 async function main() {
   const rel = await gh.rest.repos.getReleaseByTag({
@@ -16,6 +26,9 @@ async function main() {
     // spawnSync()
     let cmd = `curl -o ${asset.name} -L`
     cmd += ' -H "Accept: application/octet-stream"'
+    if (token) {
+      cmd += ` -H "Authorization: Bearer ${token}"`
+    }
     cmd += ` https://api.github.com/repos/nguyenvukhang/backblaze/releases/assets/${asset.id}`
     console.log(`Downloading [${asset.name}] ...`)
     console.log(cmd)
