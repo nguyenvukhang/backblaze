@@ -11,7 +11,7 @@ permissions:
 jobs:
   pre:
     name: Preprocessing
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix }}
     steps:
@@ -19,12 +19,10 @@ jobs:
       - run: echo "matrix=$(python3 get_endpoints.py)" >> $GITHUB_OUTPUT
         id: matrix
       - name: Enumerate outputs
-        run: |
-          echo 'matrix:    ${{ steps.matrix.outputs.matrix }}'
+        run: echo 'matrix:    ${{ steps.matrix.outputs.matrix }}'
 
   main:
     needs: [pre]
-    timeout-minutes: 20
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false

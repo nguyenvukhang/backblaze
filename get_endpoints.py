@@ -14,7 +14,7 @@ for year in range(2016, datetime.today().year + 1):
         potential_urls.append(dl_url(year, quarter))
 
 
-def check_url(urls: list[str], idx: int):
+def check_url(urls: list, idx: int):
     with requests.get(urls[idx], stream=True) as r:
         if r.status_code != 200:
             urls[idx] = None
