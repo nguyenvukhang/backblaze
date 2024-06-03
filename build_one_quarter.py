@@ -23,7 +23,7 @@ def download_file(url) -> str:
     return local_filename
 
 
-fp = download_file(url)
+fp = path.basename(url)
 
 
 if True:
