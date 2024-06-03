@@ -37,7 +37,8 @@ jobs:
       - run: pip install pandas pyarrow
       - run: curl -fLO ${{ matrix.url }}
       - run: python3 build_one_quarter.py ${{ matrix.url }}
-      - run: zip -r output ${{ matrix.file_stem }}.zip
+      - run: rm -f *.zip
+      - run: zip ${{ matrix.file_stem }}.zip output/*.parquet
 
       - name: release files
         uses: softprops/action-gh-release@v2
