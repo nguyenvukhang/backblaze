@@ -30,18 +30,23 @@ jobs:
       matrix: ${{ fromJson(needs.pre.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v4
-      # - uses: actions/setup-python@v5
-      #   with:
-      #     python-version: "3.11"
       - run: pip install pandas pyarrow
       - run: curl -fLO ${{ matrix.url }}
       - run: python3 build_one_quarter.py ${{ matrix.url }}
-      - run: rm -f *.zip
-      - run: zip ${{ matrix.file_stem }}.zip *.parquet
 
-      - name: release files
+      - name: Compress to a zipfile
+        run: |
+          rm -f *.zip
+          zip ${{ matrix.file_stem }}.zip *.parquet
+
+      - name: Generate sha512
+        run: sha512sum -b ${{ matrix.file_stem }}.zip >${{ matrix.file_stem }}.zip.sha512
+
+      - name: Publish to release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
           tag_name: ${{ github.ref_name }}
-          files: ${{ matrix.file_stem }}.zip
+          files: |
+            ${{ matrix.file_stem }}.zip
+            ${{ matrix.file_stem }}.zip.sha512
