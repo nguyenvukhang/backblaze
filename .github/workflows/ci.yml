@@ -19,7 +19,8 @@ jobs:
       - run: echo "matrix=$(python3 get_endpoints.py)" >> $GITHUB_OUTPUT
         id: matrix
       - name: Enumerate outputs
-        run: echo 'matrix:    ${{ steps.matrix.outputs.matrix }}'
+        run: |
+          echo 'matrix:    ${{ steps.matrix.outputs.matrix }}'
 
   main:
     needs: [pre]
