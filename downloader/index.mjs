@@ -2,7 +2,7 @@ import { Octokit } from 'octokit'
 import { spawnSync } from 'child_process'
 import { readFileSync, rmSync, statSync } from 'fs'
 
-const DOWNLOAD = true
+const DOWNLOAD = false
 const token = loadToken()
 const gh = new Octokit({ auth: token })
 
@@ -33,6 +33,7 @@ async function main() {
 
     let exists = false
     let downloaded = false
+    console.log(asset.id)
     try {
       downloaded = statSync(asset.name).size === asset.size
       exists = true
