@@ -1,6 +1,10 @@
 from sys import argv
 from os import path
 from subprocess import run
+from utils import *
+from io import BytesIO
+from zipfile import ZipFile
+import pyarrow.parquet as pq
 
 
 OUTPUT_DIR = "output"
@@ -31,3 +35,10 @@ def curl(id: str, target: str):
 
 
 curl(id=ASSET_ID, target=ASSET_NAME)
+
+with ZipFile(ASSET_NAME, "r") as z:
+    for member in z.namelist():
+        b = BytesIO(z.read(member))
+        df = pq.read_table(b).to_pandas()
+        print(df)
+        break

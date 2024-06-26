@@ -26,6 +26,7 @@ jobs:
     needs: [pre]
     runs-on: ubuntu-22.04
     strategy:
+      max-parallel: 2
       fail-fast: false
       matrix: ${{ fromJson(needs.pre.outputs.matrix) }}
     steps:

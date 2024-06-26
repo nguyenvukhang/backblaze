@@ -57,7 +57,8 @@ def github_parquets():
     OUTPUT_DIR = "output"
     makedirs(OUTPUT_DIR, exist_ok=True)
     res = requests.get(api_github(f"releases/tags/{TAG}"), headers=HEADERS).json()
-    incl = [{"id": a["id"], "name": a["name"]} for a in res["assets"]]
+    assets = filter(lambda a: a["name"].endswith(".zip"), res["assets"])
+    incl = [{"id": a["id"], "name": a["name"]} for a in assets]
     print(json.dumps({"include": incl}))
 
 
