@@ -1,6 +1,6 @@
 from datetime import datetime
 from multiprocessing.pool import ThreadPool
-import requests, json
+import requests, json, sys
 from os import path
 
 # This file serves as a preprocessing step for GitHub Actions. It gets all the
@@ -21,24 +21,35 @@ def check_url(urls: list, idx: int):
             urls[idx] = None
 
 
-potential_urls = [
-    blaze("data_2013.zip"),
-    blaze("data_2014.zip"),
-    blaze("data_2015.zip"),
-]
-for year in range(2016, datetime.today().year + 1):
-    for quarter in range(1, 5):
-        potential_urls.append(blaze(f"data_Q{quarter}_{year}.zip"))
+def backblaze_csvs():
+    potential_urls = [
+        blaze("data_2013.zip"),
+        blaze("data_2014.zip"),
+        blaze("data_2015.zip"),
+    ]
+    for year in range(2016, datetime.today().year + 1):
+        for quarter in range(1, 5):
+            potential_urls.append(blaze(f"data_Q{quarter}_{year}.zip"))
+
+    with ThreadPool(4) as pool:
+        jobs = [(potential_urls, i) for i in range(len(potential_urls))]
+        pool.starmap(check_url, jobs)
+
+    t = lambda x: {
+        # https://f001.backblaze...Data/data_Q1_2024.zip
+        "url": x,
+        # data_Q1_2024
+        "file_stem": path.basename(x)[:-4],
+    }
+    print(json.dumps({"include": [t(x) for x in potential_urls if x is not None]}))
 
 
-with ThreadPool(4) as pool:
-    jobs = [(potential_urls, i) for i in range(len(potential_urls))]
-    pool.starmap(check_url, jobs)
+if len(sys.argv) < 2:
+    print("Please supply an action argument.")
+    exit(1)
 
-t = lambda x: {
-    # https://f001.backblaze...Data/data_Q1_2024.zip
-    "url": x,
-    # data_Q1_2024
-    "file_stem": path.basename(x)[:-4],
-}
-print(json.dumps({"include": [t(x) for x in potential_urls if x is not None]}))
+if sys.argv[1] == "backblaze-csv":
+    backblaze_csvs()
+else:
+    print("Unrecognized argument.")
+    exit(1)

@@ -1,6 +1,6 @@
 import requests
 from sys import argv
-from os import stat, path
+from os import makedirs, path, stat as os_stat
 from subprocess import run
 
 
@@ -12,6 +12,7 @@ def read_file(path: str):
         return None
 
 
+OUTPUT_DIR = "output"
 BASE_URL = "https://api.github.com/repos/nguyenvukhang/backblaze"
 api_github = lambda v: path.join(BASE_URL, v)
 
@@ -39,19 +40,33 @@ HEADERS = {
 
 
 res = requests.get(api_github(f"releases/tags/{TAG}"), headers=HEADERS).json()
-print(res.keys())
+# print(res.keys())
 
 
-def curl(id: str, name: str):
-    cmd = ["curl", "-o", name, "-L", "-H", "Accept: application/octet-stream"]
+def curl(id: str, target: str):
+    cmd = ["curl", "-o", target, "-L", "-H", "Accept: application/octet-stream"]
     cmd += ["-H", f"Authorization: Bearer {TOKEN}"] if TOKEN is not None else []
     cmd += [api_github(f"releases/assets/{id}")]
-    run(cmd)
+    print(cmd)
+    # run(cmd)
 
 
+def stat(path: str):
+    try:
+        return os_stat(path)
+    except FileNotFoundError:
+        pass
+
+
+makedirs(OUTPUT_DIR, exist_ok=True)
 for asset in res["assets"]:
     print("name:", asset["name"])
     print(asset.keys())
-    curl(asset["id"], asset["name"])
+    target = path.join(OUTPUT_DIR, asset["name"])
+    fs_stat = stat(target)
+    if fs_stat is not None and fs_stat.st_size == asset["size"]:
+        print("Cached:", asset["name"])
+        continue
+    curl(id=asset["id"], target=target)
     print("waiting...")
     break
