@@ -3,7 +3,7 @@ name: Summarize
 on:
   push:
     branches:
-      - main
+      - dev
 
 permissions:
   contents: write
@@ -16,7 +16,7 @@ jobs:
       matrix: ${{ steps.matrix.outputs.matrix }}
     steps:
       - uses: actions/checkout@v4
-      - run: echo "matrix=$(python3 inspect/get_endpoints.py)" >> $GITHUB_OUTPUT
+      - run: echo "matrix=$(python3 get_endpoints.py github-parquets ${{ secrets.GH_ACCESS_TOKEN }})" >> $GITHUB_OUTPUT
         id: matrix
       - name: Enumerate outputs
         run: |
@@ -31,22 +31,3 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: pip install pandas pyarrow tqdm
-      - run: aria2c --continue=true ${{ matrix.dl_url }}
-      - run: python3 inspect/run.py ${{ matrix.name }}
-      - uses: actions/upload-artifact@v4
-        with:
-          name: summary-${{ matrix.name }}
-          path: summary-${{ matrix.name }}.json
-  post:
-    needs: [main]
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-      - run: pip install tqdm
-      - run: python3 inspect/join.py
-      - name: Upload to release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v0.3
-          files: summary.json

@@ -44,12 +44,18 @@ def backblaze_csvs():
     print(json.dumps({"include": [t(x) for x in potential_urls if x is not None]}))
 
 
+def github_parquets(token: str):
+    pass
+
+
 if len(sys.argv) < 2:
     print("Please supply an action argument.")
     exit(1)
 
 if sys.argv[1] == "backblaze-csv":
     backblaze_csvs()
+elif sys.argv[1] == "github-parquets":
+    github_parquets(sys.argv[2])
 else:
     print("Unrecognized argument.")
     exit(1)
