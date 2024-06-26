@@ -4,6 +4,8 @@ from tqdm import tqdm
 from datetime import datetime, timedelta
 from typing import Iterable
 from dateutil import tz
+from os import makedirs
+from shutil import rmtree
 
 
 def read_pandas(path: str) -> DataFrame:
@@ -64,3 +66,14 @@ def today() -> datetime:
     Get today's datetime (Singapore TZ)
     """
     return datetime.now(tz.gettz("Asia/Singapore"))
+
+
+def clear_dir(path: str):
+    """
+    Annihilates a directory and re-creates it empty.
+    """
+    try:
+        rmtree(path)
+    except FileNotFoundError:
+        pass
+    makedirs(path, exist_ok=True)

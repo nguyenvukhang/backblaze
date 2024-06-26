@@ -22,17 +22,19 @@ start_date = datetime.strptime(pq_files[0].split(".")[0], "%Y-%m-%d")
 for t, pq_file in zip(day_iter_n(start_date, n), pq_files):
     assert t.strftime("%Y-%m-%d") == pq_file.split(".")[0]
 
+# (date, serial_number)
+fails: list[tuple[str, str]] = []
+
+clear_dir("output")
+
 for pq_file in tqdm(pq_files):
+    date_str = path.basename(pq_file).removesuffix(".parquet")
     df = read_pandas(path.join(SRC_DIR, pq_file))
     if len(df.index) == 0:
-        print("EMPTY:", pq_file)
         continue
-    dates = df['date'].unique()
-    if len(dates) > 1:
-        print(dates)
-    date = dates[0]
-    if '-' not in date:
-        print('weird date:', date)
+    df["date"] = date_str
+    write_pandas(df, path.join("output", pq_file))
+
     # if len(df.index) < 10000:
     #     print(df["model"].unique())
     #     ded()
