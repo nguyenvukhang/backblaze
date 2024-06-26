@@ -4,6 +4,7 @@ from zipfile import ZipFile
 import pandas as pd
 import pyarrow.parquet as pq
 import pyarrow as pa
+from pyarrow.parquet.core import json
 from tqdm import tqdm
 from utils import *
 
@@ -23,9 +24,11 @@ for t, pq_file in zip(day_iter_n(start_date, n), pq_files):
     assert t.strftime("%Y-%m-%d") == pq_file.split(".")[0]
 
 # (date, serial_number)
-fails: list[tuple[str, str]] = []
+fails: dict[str, list[str]] = {}
+f_date: list[str] = []
+f_sn: list[str] = []
 
-clear_dir("output")
+makedirs("output", exist_ok=True)
 
 for pq_file in tqdm(pq_files):
     date_str = path.basename(pq_file).removesuffix(".parquet")
@@ -33,12 +36,11 @@ for pq_file in tqdm(pq_files):
     if len(df.index) == 0:
         continue
     df["date"] = date_str
-    write_pandas(df, path.join("output", pq_file))
+    df = df[df["failure"] == 1]
+    # write_pandas(df, path.join("output", pq_file))
 
-    # if len(df.index) < 10000:
-    #     print(df["model"].unique())
-    #     ded()
-    # print(len(df))
-    # print(df)
-    # break
-    # pq.write_table(pa.Table.from_pandas(df), path.join("output", pq_file))
+    if len(df["serial_number"].values) > 0:
+        fails[date_str] = list(df["serial_number"].values)
+
+with open("fails.json", "w") as f:
+    json.dump(fails, f)
