@@ -3,6 +3,10 @@ from multiprocessing.pool import ThreadPool
 import requests, json
 from os import path
 
+# This file serves as a preprocessing step for GitHub Actions. It gets all the
+# valid urls that we can download BackBlaze data from, and returns a JSON table
+# that will be the input to the matrix of the next CI task.
+
 base_url = "https://f001.backblazeb2.com/file/Backblaze-Hard-Drive-Data"
 blaze = lambda v: path.join(base_url, v)
 

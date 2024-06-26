@@ -37,10 +37,14 @@ for pq_file in tqdm(pq_files):
         continue
     df["date"] = date_str
     df = df[df["failure"] == 1]
-    # write_pandas(df, path.join("output", pq_file))
+    for sn in df["serial_number"].values:
+        f_date.append(date_str)
+        f_sn.append(sn)
 
-    if len(df["serial_number"].values) > 0:
-        fails[date_str] = list(df["serial_number"].values)
+df = DataFrame(list(zip(f_date, f_sn)), columns=["date", "serial_number"])
+write_pandas(df, 'fails.parquet')
 
-with open("fails.json", "w") as f:
-    json.dump(fails, f)
+#     print(df)
+#
+# with open("fails.json", "w") as f:
+#     json.dump(fails, f)
