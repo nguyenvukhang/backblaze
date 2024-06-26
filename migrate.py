@@ -24,9 +24,18 @@ for t, pq_file in zip(day_iter_n(start_date, n), pq_files):
 
 for pq_file in tqdm(pq_files):
     df = read_pandas(path.join(SRC_DIR, pq_file))
-    if len(df.index) < 10000:
-        print(df["model"].unique())
-        ded()
+    if len(df.index) == 0:
+        print("EMPTY:", pq_file)
+        continue
+    dates = df['date'].unique()
+    if len(dates) > 1:
+        print(dates)
+    date = dates[0]
+    if '-' not in date:
+        print('weird date:', date)
+    # if len(df.index) < 10000:
+    #     print(df["model"].unique())
+    #     ded()
     # print(len(df))
     # print(df)
     # break
