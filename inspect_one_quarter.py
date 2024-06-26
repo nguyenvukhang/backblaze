@@ -45,4 +45,4 @@ with ZipFile(ASSET_NAME, "r") as z:
         sdf = sdf[["date", "model", "serial_number"]]
         fails = sdf if fails is None else pd.concat([fails, sdf])
 
-    print(fails)
+write_pandas(fails, "fails.parquet")
