@@ -1,7 +1,8 @@
 from datetime import datetime
 from multiprocessing.pool import ThreadPool
 import requests, json, sys
-from os import path
+from os import makedirs, path
+import requests
 
 # This file serves as a preprocessing step for GitHub Actions. It gets all the
 # valid urls that we can download BackBlaze data from, and returns a JSON table
@@ -9,6 +10,9 @@ from os import path
 
 base_url = "https://f001.backblazeb2.com/file/Backblaze-Hard-Drive-Data"
 blaze = lambda v: path.join(base_url, v)
+
+github_base_url = "https://api.github.com/repos/nguyenvukhang/backblaze"
+api_github = lambda v: path.join(github_base_url, v)
 
 
 def check_url(urls: list, idx: int):
@@ -44,8 +48,17 @@ def backblaze_csvs():
     print(json.dumps({"include": [t(x) for x in potential_urls if x is not None]}))
 
 
-def github_parquets(token: str):
-    pass
+def github_parquets():
+    HEADERS = {
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+    TAG = "v0.4"
+    OUTPUT_DIR = "output"
+    makedirs(OUTPUT_DIR, exist_ok=True)
+    res = requests.get(api_github(f"releases/tags/{TAG}"), headers=HEADERS).json()
+    incl = [{"id": a["id"], "name": a["name"]} for a in res["assets"]]
+    print(json.dumps({"include": incl}))
 
 
 if len(sys.argv) < 2:
@@ -55,7 +68,7 @@ if len(sys.argv) < 2:
 if sys.argv[1] == "backblaze-csv":
     backblaze_csvs()
 elif sys.argv[1] == "github-parquets":
-    github_parquets(sys.argv[2])
+    github_parquets()
 else:
     print("Unrecognized argument.")
     exit(1)
