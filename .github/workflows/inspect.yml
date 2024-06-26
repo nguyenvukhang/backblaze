@@ -43,6 +43,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
+      - run: pip install pandas pyarrow tqdm
       - uses: actions/download-artifact@v4
-      - run: ls -a
+      - run: ls -R
       - run: python3 collate.py '${{ needs.pre.outputs.matrix }}'
