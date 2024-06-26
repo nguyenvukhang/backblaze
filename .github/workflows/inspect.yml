@@ -31,3 +31,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: pip install pandas pyarrow tqdm
+      - run: python3 inspect_one_quarter.py ${{ secrets.GH_ACCESS_TOKEN }} ${{ matrix.id }} ${{ matrix.name }}
