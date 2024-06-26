@@ -1,9 +1,9 @@
+from collections.abc import Iterable
+import pandas as pd, pyarrow.parquet as pq, pyarrow as pa, os, sys
 from os import path
-import pandas as pd
-import pyarrow.parquet as pq
-import pyarrow as pa
 from zipfile import ZipFile
-import os, sys
+from pandas import DataFrame
+from io import BytesIO
 
 if len(sys.argv) < 2:
     print("Please supply download url as first CLI arg.", sys.argv)
@@ -13,7 +13,7 @@ url = sys.argv[1]
 zip_file = path.basename(url)
 
 
-def get_csvs(zip_file: str):
+def get_csvs(zip_file: str) -> list[str]:
     """
     Gets all the `*.csv` members of the `zip_file`.
     """
@@ -21,19 +21,29 @@ def get_csvs(zip_file: str):
         l = z.namelist()
         l = filter(lambda v: not v.startswith("__MACOSX"), l)
         l = filter(lambda v: v.endswith(".csv"), l)
-        return list(l)
+        csvs = list(l)
+        csvs.sort()
+        return csvs
 
 
-for member in get_csvs(zip_file):
-    print("member:", member)
+def file_stem(x: str) -> str:
+    return path.basename(x).rsplit(".", maxsplit=1)[0]
+
+
+def generate_parquets(members: list[str]):
     with ZipFile(zip_file, "r") as z:
-        z.extract(member)
-        df = pd.read_csv(member, delimiter=",")
-        os.remove(member)
+        for member in members:
+            print("member:", member, flush=True)
+            df = pd.read_csv(BytesIO(z.read(member)), delimiter=",")
+            date_str = file_stem(member)
+            df["date"] = date_str
+            pq.write_table(pa.Table.from_pandas(df), date_str + ".parquet")
 
-        date_str = path.basename(member)[:-4]
-        df["date"] = date_str
-        pq.write_table(
-            pa.Table.from_pandas(df),
-            date_str + ".parquet",
-        )
+
+def inspect_parquets(pq_files: list[str]):
+    print(pq_files)
+
+
+members = get_csvs(zip_file)
+generate_parquets(members)
+inspect_parquets([file_stem(x) + ".parquet" for x in members])
