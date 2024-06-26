@@ -17,9 +17,7 @@ if len(argv) < 2:
     exit(1)
 
 
-TOKEN = argv[1]
-ASSET_ID = argv[2]
-ASSET_NAME = argv[3]
+TOKEN, ASSET_ID, ASSET_NAME = argv[1:4]
 
 HEADERS = {
     "Accept": "application/vnd.github+json",
