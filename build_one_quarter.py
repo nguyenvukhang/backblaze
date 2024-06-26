@@ -10,27 +10,30 @@ if len(sys.argv) < 2:
     exit(1)
 
 url = sys.argv[1]
+zip_file = path.basename(url)
 
 
-fp = path.basename(url)
+def get_csvs(zip_file: str):
+    """
+    Gets all the `*.csv` members of the `zip_file`.
+    """
+    with ZipFile(zip_file, "r") as z:
+        l = z.namelist()
+        l = filter(lambda v: not v.startswith("__MACOSX"), l)
+        l = filter(lambda v: v.endswith(".csv"), l)
+        return list(l)
 
 
-# member is guaranteed to end with ".csv" here.
-members = []
-with ZipFile(fp, "r") as z:
-    for member in z.namelist():
-        if member.startswith("__MACOSX") or not member.endswith(".csv"):
-            continue
-        members.append(member)
-print(members)
-
-for member in members:
+for member in get_csvs(zip_file):
     print("member:", member)
-    with ZipFile(fp, "r") as z:
+    with ZipFile(zip_file, "r") as z:
         z.extract(member)
         df = pd.read_csv(member, delimiter=",")
         os.remove(member)
+
+        date_str = path.basename(member)[:-4]
+        df["date"] = date_str
         pq.write_table(
             pa.Table.from_pandas(df),
-            path.basename(member)[:-4] + ".parquet",
+            date_str + ".parquet",
         )

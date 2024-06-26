@@ -20,7 +20,7 @@ jobs:
         id: matrix
       - name: Enumerate outputs
         run: |
-          echo 'matrix:    ${{ steps.matrix.outputs.matrix }}'
+          echo 'matrix: ${{ steps.matrix.outputs.matrix }}'
 
   main:
     needs: [pre]
