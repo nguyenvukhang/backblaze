@@ -33,8 +33,10 @@ dfs: dict[str, DataFrame] = {}
 
 for name, df_list in dfls.items():
     dfs[name] = pd.concat(df_list)
+    dfs[name].reset_index(inplace=True)
 
 for name, df in dfs.items():
     print("----------------")
     print("|", name, "|")
     print(df)
+    write_pandas(df, name + ".parquet")
