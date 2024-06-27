@@ -16,7 +16,7 @@ def file_stem(x: str) -> str:
     return path.basename(x).rsplit(".", maxsplit=1)[0]
 
 
-dfs = {}
+dfls: dict[str, list[DataFrame]] = {}
 for a in data["include"]:
     for pq_file in listdir(a["id"]):
         if not pq_file.endswith(".parquet"):
@@ -24,12 +24,17 @@ for a in data["include"]:
         pq_file = path.join(a["id"], pq_file)
         df = read_pandas(pq_file)
         key = file_stem(pq_file)
-        if key in dfs:
-            dfs[key].append(df)
+        if key in dfls:
+            dfls[key].append(df)
         else:
-            dfs[key] = [df]
+            dfls[key] = [df]
 
-for name, dfs in dfs.items():
+dfs: dict[str, DataFrame] = {}
+
+for name, df_list in dfls.items():
+    dfs[name] = pd.concat(df_list)
+
+for name, df in dfs.items():
     print("----------------")
     print("|", name, "|")
-    print(pd.concat(dfs))
+    print(df)
