@@ -1,8 +1,12 @@
-from pandas import DataFrame
+from pandas import DataFrame, Series
 from utils import read_pandas
 import matplotlib.pyplot as plt
 import matplotlib.dates
-from datetime import datetime
+from datetime import datetime, timedelta
+from os import path
+from math import isnan
+
+PLOT_FAILURES = False
 
 DATE_FMT = "%Y-%m-%d"
 
@@ -46,12 +50,50 @@ def plot_failures(df: DataFrame, model: str, bins: list[datetime]):
     plt.savefig(model.replace(" ", "_") + ".png")
 
 
-df = read_pandas("fails.parquet")
-years = list(set([datetime.strptime(x, DATE_FMT).year for x in df["date"].values]))
-years.sort()
-bins = generate_bins(years)
+if PLOT_FAILURES:
+    df = read_pandas("fails.parquet")
+    years = list(set([datetime.strptime(x, DATE_FMT).year for x in df["date"].values]))
+    years.sort()
+    bins = generate_bins(years)
+    top_n = top_n_fails(df)
+    for model in top_n:
+        plot_failures(df, model, bins)
+
+t = datetime(2016, 1, 1)
+end = datetime(2016, 2, 1)
 
 
-top_n = top_n_fails(df)
-for model in top_n:
-    plot_failures(df, model, bins)
+def pq_path(t: datetime):
+    base = "/Users/khang/.local/data/backblaze/parquets"
+    return path.join(base, t.strftime("%Y-%m-%d") + ".parquet")
+
+
+columns_front = None
+columns_back = None
+
+
+def get_nan(x):
+    t = 0
+    for i, col in enumerate(columns_front or []):
+        if not isnan(x[col]):
+            t += 2**i
+    print(t)
+
+    print(len(columns))
+    # print(columns)
+    exit()
+    return x
+
+
+while t < end:
+    df = read_pandas(pq_path(t))
+    if columns_front is None:
+        columns = [x for x in df.columns.values if x.startswith("smart_")]
+        i = int(len(columns) / 2)
+        columns_front = columns[:i]
+        columns_back = columns[i:]
+    df["condense"] = df.apply(get_nan, axis=1)
+    # print(columns)
+    print(df)
+    break
+    t += timedelta(days=1)
