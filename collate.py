@@ -18,7 +18,6 @@ def file_stem(x: str) -> str:
 
 
 def write(df: DataFrame, name: str):
-    df.reset_index(inplace=True, drop=True)
     print("----------------")
     print("|", name, "|")
     print(df)
@@ -39,7 +38,7 @@ def __fails__():
     dfs = []
     for df in assets_iter("fails"):
         dfs.append(df)
-    write(pd.concat(dfs), "fails")
+    write(pd.concat(dfs).reset_index(drop=True), "fails")
     del dfs
     gc.collect()
 

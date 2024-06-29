@@ -19,6 +19,10 @@ if len(argv) < 2:
     exit(1)
 
 
+def file_stem(x: str) -> str:
+    return path.basename(x).rsplit(".", maxsplit=1)[0]
+
+
 def bytes_to_dataframe(b) -> DataFrame:
     return pq.read_table(b).to_pandas()
 
@@ -50,12 +54,15 @@ dfd = DataFrameDict()
 with ZipFile(ASSET_NAME, "r") as z:
     for member in tqdm(z.namelist()):
         df = bytes_to_dataframe(BytesIO(z.read(member)))
+        date_str = path.basename(member).rsplit(".", maxsplit=1)[0]
 
         sdf = df[df["failure"] == 1]
         sdf = sdf[["date", "model", "serial_number"]]
         dfd.add("fails", sdf)
 
-        sdf = df[["date", "model"]]
+        sdf = DataFrame(df["model"].value_counts())
+        sdf["date"] = date_str
+        sdf = sdf[["date", "count"]]
         dfd.add("models", sdf)
 
 dfd.write_all()

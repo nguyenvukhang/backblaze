@@ -95,10 +95,13 @@ for i in range(1, 256, 30):
     col_list.append([f"smart_{i}_raw" for i in chunk()])
 
 m = read_pandas("models.parquet")
+print(m)
+exit()
 models = list(map(str, m["model"].values))
 # print(models)
 
 
+exit()
 for model in models:
     records: list[tuple[str, list[int]]] = []
     print("---", model, "---")
