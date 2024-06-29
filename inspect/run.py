@@ -8,8 +8,10 @@ import matplotlib.pyplot as plt
 import matplotlib.dates
 from datetime import datetime
 
+DATE_FMT = "%Y-%m-%d"
+MODEL = "ST4000DM000"
 
-df = read_pandas("/Users/khang/Downloads/fails.parquet")
+df = read_pandas("fails.parquet")
 
 
 def top_n_fails(df, n=10):
@@ -22,35 +24,32 @@ def top_n_fails(df, n=10):
 
 top_n_fails(df)
 
-dates = list(df["date"].unique())
-dates.sort()
-print(dates)
-
-
-exit()
-
 df = df[df["model"] == "ST4000DM000"]
 df = df.reset_index()
 
-fs = df["date"].value_counts()
+years = [datetime(y, 1, 1) for y in range(2013, 2025)]
+bins = []
+for i in range(len(years) - 1):
+    x, y = years[i], years[i + 1]
+    for j in range(4):
+        bins.append(x + j * (y - x) / 4)
 
-fs = [(x, y) for x, y in df["date"].value_counts().to_dict().items()]
-print(fs)
-fs.sort(key=lambda v: v[0], reverse=True)
-exit()
-x, y = [], []
+dates = [datetime.strptime(x, DATE_FMT) for x in df["date"].values]
+fig, ax = plt.subplots()
+plt.axis
+ax.hist(dates, bins=bins, color="lightblue")
+ax.xaxis.set_major_locator(matplotlib.dates.YearLocator())
+ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter("%Y"))
 
-for u, v in fs.to_dict().items():
-    x.append(u)
-    y.append(v)
+for tick in ax.xaxis.get_majorticklabels():
+    tick.set_horizontalalignment("left")
 
-x = [datetime.strptime(x, "%Y-%m-%d") for x in x]
-print(x)
+plt.title(f"{MODEL} failures over the years, by quarter")
+plt.show()
 
-print(matplotlib.dates.date2num(x))
-# plt.plot(matplotlib.dates.date2num(x), y)
+# plt.plot(x, y)
 # plt.show()
-print(df)
+# print(df)
 
 # y = []
 
