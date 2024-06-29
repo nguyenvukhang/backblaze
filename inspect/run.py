@@ -2,7 +2,7 @@ from collections.abc import Iterable
 from pandas import DataFrame, Series
 from utils import read_pandas
 import matplotlib.pyplot as plt, json
-import matplotlib.dates
+import matplotlib.dates, matplotlib.ticker
 from datetime import datetime, timedelta
 from os import makedirs, path
 from math import isnan
@@ -50,6 +50,7 @@ def top_n_fails(df: DataFrame, n=10) -> list[str]:
 def format_axis(ax):
     ax.xaxis.set_major_locator(matplotlib.dates.YearLocator())
     ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter("%Y"))
+    ax.yaxis.set_major_locator(matplotlib.ticker.MaxNLocator(integer=True))
 
     for tick in ax.xaxis.get_majorticklabels():
         tick.set_horizontalalignment("left")
@@ -66,6 +67,11 @@ def plot_failures(df: DataFrame, model: str, bins: list[datetime]):
     plt.savefig(model.replace(" ", "_") + ".png")
 
 
+def pq_path(t: datetime):
+    base = "/Users/khang/.local/data/backblaze/parquets"
+    return path.join(base, t.strftime("%Y-%m-%d") + ".parquet")
+
+
 if PLOT_FAILURES:
     df = read_pandas("fails.parquet")
     years = list(set([datetime.strptime(x, DATE_FMT).year for x in df["date"].values]))
@@ -79,11 +85,6 @@ t = datetime(2016, 1, 1)
 end = datetime(2016, 2, 1)
 
 
-def pq_path(t: datetime):
-    base = "/Users/khang/.local/data/backblaze/parquets"
-    return path.join(base, t.strftime("%Y-%m-%d") + ".parquet")
-
-
 u_cols: set[str] = set()
 l = 0
 
@@ -94,36 +95,55 @@ for i in range(1, 256, 30):
     col_list.append([f"smart_{i}_normalized" for i in chunk()])
     col_list.append([f"smart_{i}_raw" for i in chunk()])
 
-m = read_pandas("models.parquet")
-print(m)
-exit()
-models = list(map(str, m["model"].values))
-# print(models)
+
+def plot_population(df: DataFrame, model: str):
+    df = df[df.index == model]
+    # total_entries = int(df[df.index == model]["count"].sum())
+    # print(model, total_entries)
+
+    _, ax = plt.subplots()
+    format_axis(ax)
+    ax.hist(df["date"].values, weights=df["count"].values, bins=20, color="lightblue")
+    plt.title(f"{model} failures over the years, by quarter")
+    plt.savefig(model.strip().replace(" ", "_") + ".png")
+    plt.show()
+
+    print(df)
+    exit()
 
 
-exit()
-for model in models:
-    records: list[tuple[str, list[int]]] = []
-    print("---", model, "---")
-    for t in day_iter():
-        # read the dataframe
-        df = read_pandas(pq_path(t))
-        df = df[df["model"] == model]
+def plot_populations():
+    df = read_pandas("models.parquet")
+    models = list(map(str, df.index.unique()))
+    models.sort()
+    for model in models:
+        plot_population(df, model)
 
-        # print(df)
-        binrep_list = []
-        df_cols = set(df.columns)
 
-        for cols in col_list:
-            b = 0
-            for i, col in filter(lambda v: v[1] in df_cols, enumerate(cols)):
-                # p=1 means completely NA, p=0 means completely meaningful data
-                p = df[col].isna().mean()
-                if p < 0.05:
-                    b += 2**i
-            binrep_list.append(b)
-        records.append((t.strftime(DATE_FMT), binrep_list))
+plot_populations()
 
-    makedirs("output", exist_ok=True)
-    with open(path.join("output", model + ".json"), "w") as f:
-        json.dump(records, f)
+# for model in models:
+#     records: list[tuple[str, list[int]]] = []
+#     print("---", model, "---")
+#     for t in day_iter():
+#         # read the dataframe
+#         df = read_pandas(pq_path(t))
+#         df = df[df["model"] == model]
+#
+#         # print(df)
+#         binrep_list = []
+#         df_cols = set(df.columns)
+#
+#         for cols in col_list:
+#             b = 0
+#             for i, col in filter(lambda v: v[1] in df_cols, enumerate(cols)):
+#                 # p=1 means completely NA, p=0 means completely meaningful data
+#                 p = df[col].isna().mean()
+#                 if p < 0.05:
+#                     b += 2**i
+#             binrep_list.append(b)
+#         records.append((t.strftime(DATE_FMT), binrep_list))
+#
+#     makedirs("output", exist_ok=True)
+#     with open(path.join("output", model + ".json"), "w") as f:
+#         json.dump(records, f)
