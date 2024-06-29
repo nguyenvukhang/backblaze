@@ -94,21 +94,30 @@ for i in range(1, 256, 30):
     col_list.append([f"smart_{i}_normalized" for i in chunk()])
     col_list.append([f"smart_{i}_raw" for i in chunk()])
 
-models = read_pandas("models.parquet")
-print(models)
-exit()
+m = read_pandas("models.parquet")
+models = list(map(str, m["model"].values))
+# print(models)
 
 for t in day_iter():
+    # read the dataframe
     df = read_pandas(pq_path(t))
-    # df = df[df['model'] == ]
+    df = df[df["model"] == "ST3000DM001"]
+
+    # print(df)
     binrep_list = []
     df_cols = set(df.columns)
 
     for cols in col_list:
         t = 0
-        for i, col in enumerate(cols):
-            print(i, col)
-    exit()
+        for i, col in filter(lambda v: v[1] in df_cols, enumerate(cols)):
+            p = df[col].isna().mean()
+            if p > 0 and p < 1:
+                print(p, col)
+                exit()
+            # print(i, col)
+        binrep_list.append(t)
+    print(binrep_list)
+    # exit()
 
     # u_cols = u_cols.union(df.columns)
     # if len(u_cols) > l:
