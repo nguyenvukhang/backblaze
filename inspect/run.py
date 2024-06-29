@@ -89,6 +89,8 @@ while t < end:
     df = read_pandas(pq_path(t))
     if columns_front is None:
         columns = [x for x in df.columns.values if x.startswith("smart_")]
+        print(columns)
+        exit()
         i = int(len(columns) / 2)
         columns_front = columns[:i]
         columns_back = columns[i:]
@@ -97,3 +99,8 @@ while t < end:
     print(df)
     break
     t += timedelta(days=1)
+
+# I wanna be able to see that for SMART Attr 1, when it was NA for a particular
+# model.
+#
+# So we fix two things: Smart attribute # and model.

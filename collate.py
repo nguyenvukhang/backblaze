@@ -31,9 +31,11 @@ for a in data["include"]:
 
 dfs: dict[str, DataFrame] = {}
 
-for name, df_list in dfls.items():
-    dfs[name] = pd.concat(df_list)
-    dfs[name].reset_index(inplace=True)
+dfs["fails"] = pd.concat(dfls["fails"])
+dfs["models"] = pd.concat(dfls["models"]).drop_duplicates()
+
+for df in dfs.values():
+    df.reset_index(inplace=True)
 
 for name, df in dfs.items():
     print("----------------")

@@ -12,10 +12,7 @@ OUTPUT_DIR = "output"
 BASE_URL = "https://api.github.com/repos/nguyenvukhang/backblaze"
 api_github = lambda v: path.join(BASE_URL, v)
 TOKEN, ASSET_ID, ASSET_NAME = argv[1:4]
-HEADERS = {
-    "Accept": "application/vnd.github+json",
-    "X-GitHub-Api-Version": "2022-11-28",
-}
+HEADERS = { "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" }  # fmt: skip
 
 if len(argv) < 2:
     print("Please supply a github access token as the first CLI arg.")
@@ -33,16 +30,32 @@ def curl(id: str, target: str):
     run(cmd)
 
 
+class DataFrameDict:
+    def __init__(self):
+        self.dfs: dict[str, DataFrame] = {}
+
+    def add(self, key: str, df: DataFrame):
+        if self.dfs.get(key, None) is None:
+            self.dfs[key] = df
+        else:
+            self.dfs[key] = pd.concat((self.dfs[key], df))
+
+    def write_all(self):
+        for key, df in self.dfs.items():
+            write_pandas(df, key + ".parquet")
+
+
 curl(id=ASSET_ID, target=ASSET_NAME)
-fails: DataFrame = None  # type:ignore
-
-
+dfd = DataFrameDict()
 with ZipFile(ASSET_NAME, "r") as z:
     for member in tqdm(z.namelist()):
         df = bytes_to_dataframe(BytesIO(z.read(member)))
 
         sdf = df[df["failure"] == 1]
         sdf = sdf[["date", "model", "serial_number"]]
-        fails = sdf if fails is None else pd.concat([fails, sdf])
+        dfd.add("fails", sdf)
 
-write_pandas(fails, "fails.parquet")
+        sdf = df[["model"]].drop_duplicates()
+        dfd.add("models", sdf)
+
+dfd.write_all()
