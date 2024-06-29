@@ -100,24 +100,26 @@ models = list(map(str, m["model"].values))
 
 records: list[tuple[str, list[int]]] = []
 
-for t in day_iter():
-    # read the dataframe
-    df = read_pandas(pq_path(t))
-    df = df[df["model"] == "ST3000DM001"]
+for model in models:
+    print("---", model, "---")
+    for t in day_iter():
+        # read the dataframe
+        df = read_pandas(pq_path(t))
+        df = df[df["model"] == model]
 
-    # print(df)
-    binrep_list = []
-    df_cols = set(df.columns)
+        # print(df)
+        binrep_list = []
+        df_cols = set(df.columns)
 
-    for cols in col_list:
-        b = 0
-        for i, col in filter(lambda v: v[1] in df_cols, enumerate(cols)):
-            # p=1 means completely NA, p=0 means completely meaningful data
-            p = df[col].isna().mean()
-            if p < 0.05:
-                b += 2**i
-        binrep_list.append(b)
-    records.append((t.strftime(DATE_FMT), binrep_list))
+        for cols in col_list:
+            b = 0
+            for i, col in filter(lambda v: v[1] in df_cols, enumerate(cols)):
+                # p=1 means completely NA, p=0 means completely meaningful data
+                p = df[col].isna().mean()
+                if p < 0.05:
+                    b += 2**i
+            binrep_list.append(b)
+        records.append((t.strftime(DATE_FMT), binrep_list))
 
-with open("records.json", "w") as f:
-    json.dump(records, f)
+    with open("records.json", "w") as f:
+        json.dump(records, f)
