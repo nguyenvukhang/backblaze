@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from pandas import DataFrame, Series
 from utils import read_pandas
 import matplotlib.pyplot as plt
@@ -5,10 +6,25 @@ import matplotlib.dates
 from datetime import datetime, timedelta
 from os import path
 from math import isnan
+from tqdm import tqdm
 
 PLOT_FAILURES = False
 
 DATE_FMT = "%Y-%m-%d"
+
+FIRST_EVER = datetime(2013, 4, 10)
+LAST_EVER = datetime(2024, 3, 31)
+
+
+def day_iter(start=FIRST_EVER, end=LAST_EVER, progress=True) -> Iterable[datetime]:
+    t, d = start, timedelta(days=1)
+    pbar = tqdm(total=(end - start).days + 1) if progress else None
+    while t <= end:
+        if pbar is not None:
+            pbar.update()
+            pbar.set_description(t.strftime(DATE_FMT))
+        yield t
+        t += d
 
 
 def generate_bins(years: list[int]) -> list[datetime]:
@@ -68,37 +84,25 @@ def pq_path(t: datetime):
     return path.join(base, t.strftime("%Y-%m-%d") + ".parquet")
 
 
-columns_front = None
-columns_back = None
+u_cols: set[str] = set()
+l = 0
 
+col_list: list[list[str]] = []
 
-def get_nan(x):
-    t = 0
-    for i, col in enumerate(columns_front or []):
-        if not isnan(x[col]):
-            t += 2**i
-    print(t)
+for i in range(1, 256, 30):
+    chunk = lambda: range(i, i + 30)
+    col_list.append([f"smart_{i}_normalized" for i in chunk()])
+    col_list.append([f"smart_{i}_raw" for i in chunk()])
 
-    print(len(columns))
-    # print(columns)
-    exit()
-    return x
-
-
-while t < end:
+for t in day_iter():
     df = read_pandas(pq_path(t))
-    if columns_front is None:
-        columns = [x for x in df.columns.values if x.startswith("smart_")]
-        print(columns)
-        exit()
-        i = int(len(columns) / 2)
-        columns_front = columns[:i]
-        columns_back = columns[i:]
-    df["condense"] = df.apply(get_nan, axis=1)
+    u_cols = u_cols.union(df.columns)
+    if len(u_cols) > l:
+        l = len(u_cols)
+        print(l)
+        print(u_cols)
+    # df["condense"] = df.apply(get_nan, axis=1)
     # print(columns)
-    print(df)
-    break
-    t += timedelta(days=1)
 
 # I wanna be able to see that for SMART Attr 1, when it was NA for a particular
 # model.
