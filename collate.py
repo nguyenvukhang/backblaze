@@ -35,7 +35,7 @@ dfs["fails"] = pd.concat(dfls["fails"])
 dfs["models"] = pd.concat(dfls["models"]).drop_duplicates()
 
 for df in dfs.values():
-    df.reset_index(inplace=True)
+    df.reset_index(inplace=True, drop=True)
 
 for name, df in dfs.items():
     print("----------------")

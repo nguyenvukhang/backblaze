@@ -94,13 +94,27 @@ for i in range(1, 256, 30):
     col_list.append([f"smart_{i}_normalized" for i in chunk()])
     col_list.append([f"smart_{i}_raw" for i in chunk()])
 
+models = read_pandas("models.parquet")
+print(models)
+exit()
+
 for t in day_iter():
     df = read_pandas(pq_path(t))
-    u_cols = u_cols.union(df.columns)
-    if len(u_cols) > l:
-        l = len(u_cols)
-        print(l)
-        print(u_cols)
+    # df = df[df['model'] == ]
+    binrep_list = []
+    df_cols = set(df.columns)
+
+    for cols in col_list:
+        t = 0
+        for i, col in enumerate(cols):
+            print(i, col)
+    exit()
+
+    # u_cols = u_cols.union(df.columns)
+    # if len(u_cols) > l:
+    #     l = len(u_cols)
+    #     print(l)
+    #     print(u_cols)
     # df["condense"] = df.apply(get_nan, axis=1)
     # print(columns)
 
