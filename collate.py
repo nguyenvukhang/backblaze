@@ -16,6 +16,15 @@ def file_stem(x: str) -> str:
     return path.basename(x).rsplit(".", maxsplit=1)[0]
 
 
+def write(df: DataFrame, name: str):
+    df.reset_index(inplace=True, drop=True)
+    print("----------------")
+    print("|", name, "|")
+    print(df)
+    write_pandas(df, name + ".parquet")
+    del df
+
+
 dfls: dict[str, list[DataFrame]] = {}
 for a in data["include"]:
     for pq_file in listdir(a["id"]):
@@ -29,17 +38,8 @@ for a in data["include"]:
         else:
             dfls[key] = [df]
 
-dfs: dict[str, DataFrame] = {}
+df = pd.concat(dfls["fails"])
+write(df, "fails")
 
-dfs["fails"] = pd.concat(dfls["fails"])
-
-dfs["models"] = pd.concat(dfls["models"])
-
-for df in dfs.values():
-    df.reset_index(inplace=True, drop=True)
-
-for name, df in dfs.items():
-    print("----------------")
-    print("|", name, "|")
-    print(df)
-    write_pandas(df, name + ".parquet")
+df = pd.concat(dfls["models"])
+write(df, "models")
