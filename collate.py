@@ -3,6 +3,7 @@ import json
 from utils import *
 import pandas as pd
 from os import listdir, path
+import gc
 
 # TODO: the artifacts are stored in the directories that are named `asset['id']`
 # Iterate over these directories.
@@ -25,21 +26,32 @@ def write(df: DataFrame, name: str):
     del df
 
 
-dfls: dict[str, list[DataFrame]] = {}
-for a in data["include"]:
-    for pq_file in listdir(a["id"]):
-        if not pq_file.endswith(".parquet"):
-            continue
-        pq_file = path.join(a["id"], pq_file)
-        df = read_pandas(pq_file)
-        key = file_stem(pq_file)
-        if key in dfls:
-            dfls[key].append(df)
-        else:
-            dfls[key] = [df]
+def assets_iter(key: str) -> Iterable[DataFrame]:
+    for asset in data["include"]:
+        pqs = filter(lambda v: v.endswith(".parquet"), listdir(asset["id"]))
+        pqs = filter(lambda v: file_stem(v) == key, pqs)
+        pqs = map(lambda v: path.join(asset["id"], v), pqs)
+        for pq_path in pqs:
+            yield read_pandas(pq_path)
 
-df = pd.concat(dfls["fails"])
-write(df, "fails")
 
-df = pd.concat(dfls["models"])
-write(df, "models")
+def __fails__():
+    dfs = []
+    for df in assets_iter("fails"):
+        dfs.append(df)
+    write(pd.concat(dfs), "fails")
+    del dfs
+    gc.collect()
+
+
+def __models__():
+    dfs = []
+    for df in assets_iter("models"):
+        dfs.append(df)
+    write(pd.concat(dfs), "models")
+    del dfs
+    gc.collect()
+
+
+__fails__()
+__models__()

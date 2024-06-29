@@ -4,7 +4,7 @@ from utils import read_pandas
 import matplotlib.pyplot as plt, json
 import matplotlib.dates
 from datetime import datetime, timedelta
-from os import path
+from os import makedirs, path
 from math import isnan
 from tqdm import tqdm
 
@@ -98,9 +98,9 @@ m = read_pandas("models.parquet")
 models = list(map(str, m["model"].values))
 # print(models)
 
-records: list[tuple[str, list[int]]] = []
 
 for model in models:
+    records: list[tuple[str, list[int]]] = []
     print("---", model, "---")
     for t in day_iter():
         # read the dataframe
@@ -121,5 +121,6 @@ for model in models:
             binrep_list.append(b)
         records.append((t.strftime(DATE_FMT), binrep_list))
 
-    with open("records.json", "w") as f:
+    makedirs("output", exist_ok=True)
+    with open(path.join("output", model + ".json"), "w") as f:
         json.dump(records, f)
