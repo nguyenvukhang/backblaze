@@ -8,12 +8,13 @@ from os import makedirs, path
 from math import isnan
 from tqdm import tqdm
 
-PLOT_FAILURES = False
-
+PLOT_FAILURES = True
+PLOT_POPULATION = True
 DATE_FMT = "%Y-%m-%d"
-
 FIRST_EVER = datetime(2013, 4, 10)
 LAST_EVER = datetime(2024, 3, 31)
+OUTPUT_DIR = "output"
+makedirs(OUTPUT_DIR, exist_ok=True)
 
 
 def day_iter(start=FIRST_EVER, end=LAST_EVER, progress=True) -> Iterable[datetime]:
@@ -49,15 +50,17 @@ def generate_week_bins(years: list[int]) -> list[datetime]:
     return bins
 
 
-def top_n_fails(df: DataFrame, n=10) -> list[str]:
+def top_n_fails(df: DataFrame, n=1e10) -> list[str]:
     """
     Returns the top `n` models sorted by most-failed first.
     """
     sns = [(k, v) for k, v in df["model"].value_counts().to_dict().items()]
     sns.sort(key=lambda v: v[1], reverse=True)
-    for model, fails in sns[:n]:
+    if n < len(sns):
+        sns = sns[:n]
+    for model, fails in sns:
         print(f"{fails: <8} {model}")
-    return [x[0] for x in sns[:n]]
+    return [x[0] for x in sns]
 
 
 def format_axis(ax):
@@ -77,7 +80,9 @@ def plot_failures(df: DataFrame, model: str, bins: list[datetime]):
     format_axis(ax)
     ax.hist(dates, bins=bins, color="lightblue")
     plt.title(f"{model} failures over the years, by quarter")
-    plt.savefig(model.replace(" ", "_") + ".png")
+    filename = model.strip().replace(" ", "_") + ".png"
+    plt.savefig(path.join(OUTPUT_DIR, filename))
+    plt.close()
 
 
 def pq_path(t: datetime):
@@ -85,24 +90,7 @@ def pq_path(t: datetime):
     return path.join(base, t.strftime("%Y-%m-%d") + ".parquet")
 
 
-if PLOT_FAILURES:
-    df = read_pandas("fails.parquet")
-    years = list(set([datetime.strptime(x, DATE_FMT).year for x in df["date"].values]))
-    years.sort()
-    bins = generate_quarter_bins(years)
-    top_n = top_n_fails(df)
-    for model in top_n:
-        plot_failures(df, model, bins)
-
-t = datetime(2016, 1, 1)
-end = datetime(2016, 2, 1)
-
-
-u_cols: set[str] = set()
-l = 0
-
 col_list: list[list[str]] = []
-
 for i in range(1, 256, 30):
     chunk = lambda: range(i, i + 30)
     col_list.append([f"smart_{i}_normalized" for i in chunk()])
@@ -117,7 +105,8 @@ def plot_population(df: DataFrame, model: str):
     dates = [datetime.strptime(x, DATE_FMT) for x in df["date"].values]
     ax.hist(dates, weights=df["count"].values, bins=30, color="lightblue")
     plt.title(f"{model} population over the years")
-    plt.savefig(model.strip().replace(" ", "_") + ".popl.png")
+    filename = model.strip().replace(" ", "_") + ".popl.png"
+    plt.savefig(path.join(OUTPUT_DIR, filename))
     plt.close()
     # plt.show()
 
@@ -130,7 +119,17 @@ def plot_populations():
         plot_population(df, model)
 
 
-plot_populations()
+if PLOT_FAILURES:
+    df = read_pandas("fails.parquet")
+    years = list(set([datetime.strptime(x, DATE_FMT).year for x in df["date"].values]))
+    years.sort()
+    bins = generate_quarter_bins(years)
+    top_n = top_n_fails(df)
+    for model in tqdm(top_n):
+        plot_failures(df, model, bins)
+
+if PLOT_POPULATION:
+    plot_populations()
 
 # for model in models:
 #     records: list[tuple[str, list[int]]] = []
@@ -154,6 +153,5 @@ plot_populations()
 #             binrep_list.append(b)
 #         records.append((t.strftime(DATE_FMT), binrep_list))
 #
-#     makedirs("output", exist_ok=True)
-#     with open(path.join("output", model + ".json"), "w") as f:
+#     with open(path.join(OUTPUT_DIR, model + ".json"), "w") as f:
 #         json.dump(records, f)
