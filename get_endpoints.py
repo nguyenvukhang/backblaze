@@ -59,8 +59,6 @@ def github_parquets():
     res = requests.get(api_github(f"releases/tags/{TAG}"), headers=HEADERS).json()
     assets = filter(lambda a: a["name"].endswith(".zip"), res["assets"])
     incl = [{"id": str(a["id"]), "name": str(a["name"])} for a in assets]
-    # DEBUGGING REDUCTION
-    incl = incl[:2]
     print(json.dumps({"include": incl}))
 
 
