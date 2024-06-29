@@ -6,3 +6,4 @@ node_modules/
 .env
 output/
 *.sha512
+*.png
