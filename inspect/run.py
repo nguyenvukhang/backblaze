@@ -14,7 +14,7 @@ DATE_FMT = "%Y-%m-%d"
 FIRST_EVER = datetime(2013, 4, 10)
 LAST_EVER = datetime(2024, 3, 31)
 OUTPUT_DIR = "output"
-makedirs(OUTPUT_DIR, exist_ok=True)
+makedirs(path.join(OUTPUT_DIR), exist_ok=True)
 
 
 def day_iter(start=FIRST_EVER, end=LAST_EVER, progress=True) -> Iterable[datetime]:
@@ -81,7 +81,8 @@ def plot_failures(df: DataFrame, model: str, bins: list[datetime]):
     ax.hist(dates, bins=bins, color="lightblue")
     plt.title(f"{model} failures over the years, by quarter")
     filename = model.strip().replace(" ", "_") + ".png"
-    plt.savefig(path.join(OUTPUT_DIR, filename))
+    makedirs(path.join(OUTPUT_DIR, "failures"), exist_ok=True)
+    plt.savefig(path.join(OUTPUT_DIR, "failures", filename))
     plt.close()
 
 
@@ -105,10 +106,10 @@ def plot_population(df: DataFrame, model: str):
     dates = [datetime.strptime(x, DATE_FMT) for x in df["date"].values]
     ax.hist(dates, weights=df["count"].values, bins=30, color="lightblue")
     plt.title(f"{model} population over the years")
-    filename = model.strip().replace(" ", "_") + ".popl.png"
-    plt.savefig(path.join(OUTPUT_DIR, filename))
+    filename = model.strip().replace(" ", "_") + ".png"
+    makedirs(path.join(OUTPUT_DIR, "populations"), exist_ok=True)
+    plt.savefig(path.join(OUTPUT_DIR, "populations", filename))
     plt.close()
-    # plt.show()
 
 
 def plot_populations():
@@ -124,12 +125,24 @@ if PLOT_FAILURES:
     years = list(set([datetime.strptime(x, DATE_FMT).year for x in df["date"].values]))
     years.sort()
     bins = generate_quarter_bins(years)
-    top_n = top_n_fails(df)
-    for model in tqdm(top_n):
-        plot_failures(df, model, bins)
+    p = [(k, v) for k, v in df["model"].value_counts().to_dict().items()]
+    p.sort(key=lambda v: v[1], reverse=True)
+    for model in tqdm([sn for sn, _ in p]):
+        if "DELLBOSS_VD" in model:
+            print(model)
+            plot_failures(df, model, bins)
 
 if PLOT_POPULATION:
     plot_populations()
+
+# for t in day_iter():
+#     # read the dataframe
+#     df = read_pandas(pq_path(t))
+#     df = df[(df["model"] == "DELLBOSS_VD")]
+#     df = df[df["failure"] == 1]
+#     if len(df.index) > 0:
+#         print(t, len(df.index))
+
 
 # for model in models:
 #     records: list[tuple[str, list[int]]] = []
