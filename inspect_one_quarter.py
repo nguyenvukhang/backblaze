@@ -55,7 +55,7 @@ with ZipFile(ASSET_NAME, "r") as z:
         sdf = sdf[["date", "model", "serial_number"]]
         dfd.add("fails", sdf)
 
-        sdf = df[["model"]].drop_duplicates()
+        sdf = df[["date", "model"]]
         dfd.add("models", sdf)
 
 dfd.write_all()

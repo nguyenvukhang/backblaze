@@ -32,7 +32,8 @@ for a in data["include"]:
 dfs: dict[str, DataFrame] = {}
 
 dfs["fails"] = pd.concat(dfls["fails"])
-dfs["models"] = pd.concat(dfls["models"]).drop_duplicates()
+
+dfs["models"] = pd.concat(dfls["models"])
 
 for df in dfs.values():
     df.reset_index(inplace=True, drop=True)
