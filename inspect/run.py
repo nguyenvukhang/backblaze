@@ -110,11 +110,10 @@ for t in day_iter():
     for cols in col_list:
         t = 0
         for i, col in filter(lambda v: v[1] in df_cols, enumerate(cols)):
+            # p=1 means completely NA, p=0 means completely meaningful data
             p = df[col].isna().mean()
-            if p > 0 and p < 1:
-                print(p, col)
-                exit()
-            # print(i, col)
+            if p < 0.05:
+                t += 2**i
         binrep_list.append(t)
     print(binrep_list)
     # exit()
