@@ -1,39 +1,57 @@
 import pyarrow.parquet as pq
 from zipfile import ZipFile
-from pyarrow.util import sys
 from tqdm import tqdm
 import json
 from io import BytesIO
-
-ht: dict[tuple[str, str], set[str]] = {}
-
-
-def insert(ht, model, serial_number, capacity):
-    x = ht.get((model, capacity), None)
-    if x is None:
-        x = set()
-    x.add(serial_number)
-    ht[(model, capacity)] = x
+from utils import read_pandas
+import matplotlib.pyplot as plt
+import matplotlib.dates
+from datetime import datetime
 
 
-name = sys.argv[1]
-
-with ZipFile(name + ".zip", "r") as z:
-    for member in tqdm(z.namelist()):
-        df = pq.read_table(BytesIO(z.read(member))).to_pandas()
-        df = df[["model", "serial_number", "capacity_bytes"]]
-        for _, (model, serial_number, capacity) in df.iterrows():
-            capacity = int(capacity)
-            model = str(model)
-            serial_number = str(serial_number)
-            insert(ht, model, serial_number, capacity)
-
-output = {}
-for (model, capacity), serial_numbers in ht.items():
-    if output.get(model, None) is None:
-        output[model] = {}
-    output[model][capacity] = list(serial_numbers)
+df = read_pandas("/Users/khang/Downloads/fails.parquet")
 
 
-with open(f"summary-{name}.json", "w") as f:
-    json.dump(output, f)
+def top_n_fails(df, n=10):
+    sns = df["model"].value_counts().to_dict()
+    sns = [(k, v) for k, v in sns.items()]
+    sns.sort(key=lambda v: v[1], reverse=True)
+    for x in sns[:n]:
+        print(x)
+
+
+top_n_fails(df)
+
+dates = list(df["date"].unique())
+dates.sort()
+print(dates)
+
+
+exit()
+
+df = df[df["model"] == "ST4000DM000"]
+df = df.reset_index()
+
+fs = df["date"].value_counts()
+
+fs = [(x, y) for x, y in df["date"].value_counts().to_dict().items()]
+print(fs)
+fs.sort(key=lambda v: v[0], reverse=True)
+exit()
+x, y = [], []
+
+for u, v in fs.to_dict().items():
+    x.append(u)
+    y.append(v)
+
+x = [datetime.strptime(x, "%Y-%m-%d") for x in x]
+print(x)
+
+print(matplotlib.dates.date2num(x))
+# plt.plot(matplotlib.dates.date2num(x), y)
+# plt.show()
+print(df)
+
+# y = []
+
+# print(sns[:5])
