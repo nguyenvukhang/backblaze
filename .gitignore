@@ -7,3 +7,4 @@ node_modules/
 output/
 *.sha512
 *.png
+*.json

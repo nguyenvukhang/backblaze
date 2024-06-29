@@ -1,7 +1,7 @@
 from collections.abc import Iterable
 from pandas import DataFrame, Series
 from utils import read_pandas
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt, json
 import matplotlib.dates
 from datetime import datetime, timedelta
 from os import path
@@ -98,6 +98,8 @@ m = read_pandas("models.parquet")
 models = list(map(str, m["model"].values))
 # print(models)
 
+records: list[tuple[str, list[int]]] = []
+
 for t in day_iter():
     # read the dataframe
     df = read_pandas(pq_path(t))
@@ -108,25 +110,14 @@ for t in day_iter():
     df_cols = set(df.columns)
 
     for cols in col_list:
-        t = 0
+        b = 0
         for i, col in filter(lambda v: v[1] in df_cols, enumerate(cols)):
             # p=1 means completely NA, p=0 means completely meaningful data
             p = df[col].isna().mean()
             if p < 0.05:
-                t += 2**i
-        binrep_list.append(t)
-    print(binrep_list)
-    # exit()
+                b += 2**i
+        binrep_list.append(b)
+    records.append((t.strftime(DATE_FMT), binrep_list))
 
-    # u_cols = u_cols.union(df.columns)
-    # if len(u_cols) > l:
-    #     l = len(u_cols)
-    #     print(l)
-    #     print(u_cols)
-    # df["condense"] = df.apply(get_nan, axis=1)
-    # print(columns)
-
-# I wanna be able to see that for SMART Attr 1, when it was NA for a particular
-# model.
-#
-# So we fix two things: Smart attribute # and model.
+with open("records.json", "w") as f:
+    json.dump(records, f)
