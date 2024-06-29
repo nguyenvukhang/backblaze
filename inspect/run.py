@@ -27,12 +27,25 @@ def day_iter(start=FIRST_EVER, end=LAST_EVER, progress=True) -> Iterable[datetim
         t += d
 
 
-def generate_bins(years: list[int]) -> list[datetime]:
+def generate_quarter_bins(years: list[int]) -> list[datetime]:
     bins = []
     for y in years:
         x, y = datetime(y, 1, 1), datetime(y + 1, 1, 1)
         for j in range(4):
             bins.append(x + j * (y - x) / 4)
+    return bins
+
+
+def generate_week_bins(years: list[int]) -> list[datetime]:
+    bins = []
+    t = datetime(years[0], 1, 1)
+    day, week = timedelta(days=1), timedelta(days=7)
+    while t.weekday() > 0:
+        t -= day
+    end = datetime(years[-1], 12, 31)
+    while t <= end:
+        bins.append(t)
+        t += week
     return bins
 
 
@@ -76,7 +89,7 @@ if PLOT_FAILURES:
     df = read_pandas("fails.parquet")
     years = list(set([datetime.strptime(x, DATE_FMT).year for x in df["date"].values]))
     years.sort()
-    bins = generate_bins(years)
+    bins = generate_quarter_bins(years)
     top_n = top_n_fails(df)
     for model in top_n:
         plot_failures(df, model, bins)
@@ -98,25 +111,22 @@ for i in range(1, 256, 30):
 
 def plot_population(df: DataFrame, model: str):
     df = df[df.index == model]
-    # total_entries = int(df[df.index == model]["count"].sum())
-    # print(model, total_entries)
 
     _, ax = plt.subplots()
     format_axis(ax)
-    ax.hist(df["date"].values, weights=df["count"].values, bins=20, color="lightblue")
-    plt.title(f"{model} failures over the years, by quarter")
-    plt.savefig(model.strip().replace(" ", "_") + ".png")
-    plt.show()
-
-    print(df)
-    exit()
+    dates = [datetime.strptime(x, DATE_FMT) for x in df["date"].values]
+    ax.hist(dates, weights=df["count"].values, bins=30, color="lightblue")
+    plt.title(f"{model} population over the years")
+    plt.savefig(model.strip().replace(" ", "_") + ".popl.png")
+    plt.close()
+    # plt.show()
 
 
 def plot_populations():
     df = read_pandas("models.parquet")
     models = list(map(str, df.index.unique()))
     models.sort()
-    for model in models:
+    for model in tqdm(models):
         plot_population(df, model)
 
 
