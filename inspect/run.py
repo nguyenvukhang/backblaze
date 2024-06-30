@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 PLOT_FAILURES = False
 PLOT_POPULATION = False
-GATHER_ATTRIBUTES = True
+GATHER_ATTRIBUTES = False
 DATE_FMT = "%Y-%m-%d"
 FIRST_EVER = datetime(2013, 4, 10)
 LAST_EVER = datetime(2024, 3, 31)
@@ -130,36 +130,57 @@ def get_binrep(df: DataFrame, cols: list[str], threshold=0.05) -> int:
 
 
 def gather_attributes():
-    col_list: list[list[str]] = []
-    for i in range(1, 256, 30):
-        chunk = lambda: range(i, i + 30)
-        col_list.append([f"smart_{i}_normalized" for i in chunk()])
-        col_list.append([f"smart_{i}_raw" for i in chunk()])
+    all_cols: list[str] = []
+    for i in range(1, 256):
+        all_cols.append(f"smart_{i}_normalized")
+        all_cols.append(f"smart_{i}_raw")
     for model in top_n_fails(read_pandas("fails.parquet"), n=5):
         print(model)
-        ht: dict[str, list[int]] = {}
-        dates = []
-        brll = [[] for _ in col_list]
+        data = {c: [] for c in all_cols}
+        data["date"] = []
         for t in day_iter():
             date_str = t.strftime(DATE_FMT)
             df = read_pandas(pq_path(t))
             df = df[df["model"] == model]
-            dates.append(date_str)
-            for i in range(len(col_list)):
-                brll[i].append(get_binrep(df, col_list[i]))
+            dfc = set(df.columns)
+            data["date"].append(date_str)
+            for col in all_cols:
+                data[col].append(col in dfc and df[col].isna().mean() < 0.05)
             # if t == FIRST_EVER + timedelta(days=100):
             #     break
-        data = {str(i): brll[i] for i in range(len(col_list))}
-        data["date"] = dates
         df = DataFrame(data)
         df["model"] = model
         df = df[
             ["model", "date", *[x for x in df.columns if x not in ("model", "date")]]
         ]
-        print(df)
-        write_pandas(df, path.join(OUTPUT_DIR, sanitize_model(model) + ".parquet"))
+        makedirs(path.join(OUTPUT_DIR, "attrs"), exist_ok=True)
+        write_pandas(
+            df, path.join(OUTPUT_DIR, "attrs", sanitize_model(model) + ".parquet")
+        )
 
-    print(col_list)
+
+df = read_pandas("output/attrs/ST4000DM000.parquet")
+x = df["smart_1_normalized"]
+present = df[df["smart_1_normalized"] == True]
+absent = df[df["smart_1_normalized"] == False]
+print(len(present["date"].values))
+print(len(absent["date"].values))
+# print(len(y["date"].values))
+# print(len(y["date"].unique()))
+# exit()
+
+_, ax = plt.subplots()
+format_axis(ax)
+dates = [datetime.strptime(x, DATE_FMT) for x in absent["date"].values]
+ax.hist(dates, bins=30, color="lightblue")
+# plt.title(f"{model} failures over the years, by quarter")
+# filename = model.strip().replace(" ", "_") + ".png"
+makedirs(path.join(OUTPUT_DIR, "failures"), exist_ok=True)
+# plt.savefig(path.join(OUTPUT_DIR, "failures", filename))
+plt.show()
+plt.close()
+exit()
+print(df)
 
 
 # for model in models:
