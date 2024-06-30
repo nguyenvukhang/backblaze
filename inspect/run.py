@@ -8,8 +8,9 @@ from os import makedirs, path
 from math import isnan
 from tqdm import tqdm
 
-PLOT_FAILURES = True
-PLOT_POPULATION = True
+PLOT_FAILURES = False
+PLOT_POPULATION = False
+GATHER_ATTRIBUTES = True
 DATE_FMT = "%Y-%m-%d"
 FIRST_EVER = datetime(2013, 4, 10)
 LAST_EVER = datetime(2024, 3, 31)
@@ -91,13 +92,6 @@ def pq_path(t: datetime):
     return path.join(base, t.strftime("%Y-%m-%d") + ".parquet")
 
 
-col_list: list[list[str]] = []
-for i in range(1, 256, 30):
-    chunk = lambda: range(i, i + 30)
-    col_list.append([f"smart_{i}_normalized" for i in chunk()])
-    col_list.append([f"smart_{i}_raw" for i in chunk()])
-
-
 def plot_population(df: DataFrame, model: str):
     df = df[df.index == model]
 
@@ -120,28 +114,36 @@ def plot_populations():
         plot_population(df, model)
 
 
-if PLOT_FAILURES:
-    df = read_pandas("fails.parquet")
-    years = list(set([datetime.strptime(x, DATE_FMT).year for x in df["date"].values]))
-    years.sort()
-    bins = generate_quarter_bins(years)
-    p = [(k, v) for k, v in df["model"].value_counts().to_dict().items()]
-    p.sort(key=lambda v: v[1], reverse=True)
-    for model in tqdm([sn for sn, _ in p]):
-        if "DELLBOSS_VD" in model:
-            print(model)
-            plot_failures(df, model, bins)
+def get_binrep(df: DataFrame, cols: list[str], threshold=0.05) -> int:
+    b = 0
+    for i, col in filter(lambda v: v[1] in df.columns, enumerate(cols)):
+        # p=1 means completely NA, p=0 means completely meaningful data
+        p = df[col].isna().mean()
+        if p < threshold:
+            b += 2**i
+    return b
 
-if PLOT_POPULATION:
-    plot_populations()
 
-# for t in day_iter():
-#     # read the dataframe
-#     df = read_pandas(pq_path(t))
-#     df = df[(df["model"] == "DELLBOSS_VD")]
-#     df = df[df["failure"] == 1]
-#     if len(df.index) > 0:
-#         print(t, len(df.index))
+def gather_attributes():
+    col_list: list[list[str]] = []
+    for i in range(1, 256, 30):
+        chunk = lambda: range(i, i + 30)
+        col_list.append([f"smart_{i}_normalized" for i in chunk()])
+        col_list.append([f"smart_{i}_raw" for i in chunk()])
+    mdf = read_pandas("models.parquet")
+    for model in map(str, mdf.index.unique()):
+        print(model)
+        for t in day_iter():
+            date_str = t.strftime(DATE_FMT)
+            df = read_pandas(pq_path(t))
+            df = df[df["model"] == model]
+            brl = []
+            for cols in col_list:
+                brl.append(get_binrep(df, cols))
+            print(df)
+            print(brl)
+            exit()
+    print(col_list)
 
 
 # for model in models:
@@ -168,3 +170,17 @@ if PLOT_POPULATION:
 #
 #     with open(path.join(OUTPUT_DIR, model + ".json"), "w") as f:
 #         json.dump(records, f)
+
+if PLOT_FAILURES:
+    df = read_pandas("fails.parquet")
+    years = list(set([datetime.strptime(x, DATE_FMT).year for x in df["date"].values]))
+    years.sort()
+    bins = generate_quarter_bins(years)
+    p = [(k, v) for k, v in df["model"].value_counts().to_dict().items()]
+    p.sort(key=lambda v: v[1], reverse=True)
+    for model in tqdm([sn for sn, _ in p]):
+        plot_failures(df, model, bins)
+if PLOT_POPULATION:
+    plot_populations()
+if GATHER_ATTRIBUTES:
+    gather_attributes()
