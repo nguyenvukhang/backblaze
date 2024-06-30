@@ -11,7 +11,6 @@ from shutil import rmtree
 def read_pandas(path: str) -> DataFrame:
     return pq.read_table(path).to_pandas()
 
-
 def write_pandas(df: DataFrame, path: str):
     pq.write_table(pa.Table.from_pandas(df), path)
 

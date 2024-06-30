@@ -1,6 +1,6 @@
 from collections.abc import Iterable
 from pandas import DataFrame, Series
-from utils import read_pandas
+from utils import read_pandas, write_pandas
 import matplotlib.pyplot as plt, json
 import matplotlib.dates, matplotlib.ticker
 from datetime import datetime, timedelta
@@ -51,7 +51,7 @@ def generate_week_bins(years: list[int]) -> list[datetime]:
     return bins
 
 
-def top_n_fails(df: DataFrame, n=1e10) -> list[str]:
+def top_n_fails(df: DataFrame, n=1e10, silent=False) -> list[str]:
     """
     Returns the top `n` models sorted by most-failed first.
     """
@@ -59,8 +59,9 @@ def top_n_fails(df: DataFrame, n=1e10) -> list[str]:
     sns.sort(key=lambda v: v[1], reverse=True)
     if n < len(sns):
         sns = sns[:n]
-    for model, fails in sns:
-        print(f"{fails: <8} {model}")
+    if not silent:
+        for model, fails in sns:
+            print(f"{fails: <8} {model}")
     return [x[0] for x in sns]
 
 
@@ -71,6 +72,10 @@ def format_axis(ax):
 
     for tick in ax.xaxis.get_majorticklabels():
         tick.set_horizontalalignment("left")
+
+
+def sanitize_model(model: str) -> str:
+    return model.strip().replace(" ", "_")
 
 
 def plot_failures(df: DataFrame, model: str, bins: list[datetime]):
@@ -130,26 +135,29 @@ def gather_attributes():
         chunk = lambda: range(i, i + 30)
         col_list.append([f"smart_{i}_normalized" for i in chunk()])
         col_list.append([f"smart_{i}_raw" for i in chunk()])
-    mdf = read_pandas("models.parquet")
-    for model in map(str, mdf.index.unique()):
+    for model in top_n_fails(read_pandas("fails.parquet"), n=5):
         print(model)
         ht: dict[str, list[int]] = {}
+        dates = []
+        brll = [[] for _ in col_list]
         for t in day_iter():
             date_str = t.strftime(DATE_FMT)
             df = read_pandas(pq_path(t))
             df = df[df["model"] == model]
-            ht[date_str] = [get_binrep(df, cols) for cols in col_list]
-            if t == FIRST_EVER + timedelta(days=100):
-                break
-        df = DataFrame(data=ht).transpose()
-        df.index = df.index.set_names(["date"])
-        df = df.reset_index()
+            dates.append(date_str)
+            for i in range(len(col_list)):
+                brll[i].append(get_binrep(df, col_list[i]))
+            # if t == FIRST_EVER + timedelta(days=100):
+            #     break
+        data = {str(i): brll[i] for i in range(len(col_list))}
+        data["date"] = dates
+        df = DataFrame(data)
         df["model"] = model
         df = df[
             ["model", "date", *[x for x in df.columns if x not in ("model", "date")]]
         ]
         print(df)
-        exit()
+        write_pandas(df, path.join(OUTPUT_DIR, sanitize_model(model) + ".parquet"))
 
     print(col_list)
 
