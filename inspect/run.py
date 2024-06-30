@@ -133,16 +133,24 @@ def gather_attributes():
     mdf = read_pandas("models.parquet")
     for model in map(str, mdf.index.unique()):
         print(model)
+        ht: dict[str, list[int]] = {}
         for t in day_iter():
             date_str = t.strftime(DATE_FMT)
             df = read_pandas(pq_path(t))
             df = df[df["model"] == model]
-            brl = []
-            for cols in col_list:
-                brl.append(get_binrep(df, cols))
-            print(df)
-            print(brl)
-            exit()
+            ht[date_str] = [get_binrep(df, cols) for cols in col_list]
+            if t == FIRST_EVER + timedelta(days=100):
+                break
+        df = DataFrame(data=ht).transpose()
+        df.index = df.index.set_names(["date"])
+        df = df.reset_index()
+        df["model"] = model
+        df = df[
+            ["model", "date", *[x for x in df.columns if x not in ("model", "date")]]
+        ]
+        print(df)
+        exit()
+
     print(col_list)
 
 
