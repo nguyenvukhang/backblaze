@@ -1,3 +1,4 @@
+from typing import cast
 import pandas as pd, pyarrow.parquet as pq, pyarrow as pa, sys
 from os import path
 from zipfile import ZipFile
@@ -25,17 +26,17 @@ def get_csvs(zip_file: str) -> list[str]:
 
 
 def generate_parquets(members: list[str]):
-    dfs = []
+    Df = cast(pd.DataFrame, None)
     with ZipFile(zip_file, "r") as z:
         for member in members:
             print("member:", member, flush=True)
             df = pd.read_csv(BytesIO(z.read(member)), delimiter=",")
             date_str = path.basename(member).removesuffix(".csv")
             df["date"] = date_str
-            dfs.append(df)
+            Df = df if Df is None else pd.concat((Df, df))
             pq.write_table(pa.Table.from_pandas(df), date_str + ".parquet")
-    df = pd.concat(dfs)
-    tbl = pa.Table.from_pandas(df)
+    Df.reset_index(drop=True, inplace=True)
+    tbl = pa.Table.from_pandas(Df)
     pq.write_table(tbl, zip_file.removesuffix(".zip") + ".parquet")
 
 
