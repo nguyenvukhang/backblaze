@@ -13,11 +13,18 @@ api_github = lambda v: os.path.join(BASE_URL, v)
 HEADERS = { "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" }  # fmt: skip
 
 
+def run_cmd(cmd: list[str], retries: int):
+    try:
+        subprocess.run(cmd)
+    except:
+        run_cmd(cmd, retries - 1)
+
+
 def curl(id: str, target: str):
     cmd = ["curl", "-o", target, "-L", "-H", "Accept: application/octet-stream"]
     cmd += ["-H", f"Authorization: Bearer {TOKEN}"] if TOKEN is not None else []
     cmd += [api_github(f"releases/assets/{id}")]
-    subprocess.run(cmd)
+    run_cmd(cmd, retries=3)
 
 
 def dataframes() -> Iterable[DataFrame]:
