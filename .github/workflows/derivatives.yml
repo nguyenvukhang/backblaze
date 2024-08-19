@@ -1,0 +1,54 @@
+name: Derivatives
+
+on:
+  push:
+    branches:
+      - dev
+
+permissions:
+  contents: write
+
+jobs:
+  pre:
+    name: Preprocessing
+    runs-on: ubuntu-22.04
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "matrix=$(python3 -m blaze.scripts.get_gh_parquet_meta)" >> $GITHUB_OUTPUT
+        id: matrix
+      - name: Enumerate outputs
+        run: |
+          echo 'matrix:    ${{ steps.matrix.outputs.matrix }}'
+
+  main:
+    needs: [pre]
+    name: derivatives on ${{ matrix.name }}
+    runs-on: ubuntu-22.04
+    strategy:
+      max-parallel: 2
+      fail-fast: false
+      matrix: ${{ fromJson(needs.pre.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install pandas pyarrow tqdm
+      - run: python3 -m blaze.scripts.gh_derivative_build ${{ secrets.GH_ACCESS_TOKEN }} ${{ matrix.id }} ${{ matrix.name }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.id }}
+          path: "*.parquet"
+
+  post:
+    needs: [main, pre]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install pandas pyarrow tqdm
+      - uses: actions/download-artifact@v4
+      - run: python3 collate.py '${{ needs.pre.outputs.matrix }}'
+      - name: Publish to release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          files: "*.parquet"
