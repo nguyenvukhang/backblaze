@@ -28,6 +28,7 @@ jobs:
     needs: [pre]
     runs-on: ubuntu-22.04
     strategy:
+      max-parallel: 5
       fail-fast: false
       matrix: ${{ fromJson(needs.pre.outputs.matrix) }}
     name: ${{ matrix.file_stem }}
@@ -35,7 +36,7 @@ jobs:
       - uses: actions/checkout@v4
       - run: pip install pandas pyarrow
       - run: curl -fLO ${{ matrix.url }}
-      - run: python3 build_one_quarter.py ${{ matrix.url }}
+      - run: python3 -m blaze.scripts.backblaze_csv_to_parquet ${{ matrix.url }}
 
       - name: Compress to a zipfile
         run: |

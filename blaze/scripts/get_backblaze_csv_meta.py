@@ -1,3 +1,8 @@
+# This script fetches all the metadata from BackBlaze itself. This includes
+# getting the most up-to-date list of CSV datasets to download.
+#
+# This script is used on GitHub Actions in the preprocessing stage.
+
 from datetime import datetime
 from multiprocessing.pool import ThreadPool
 import requests, json, os
