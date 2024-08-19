@@ -4,6 +4,8 @@ from os import path
 from zipfile import ZipFile
 from io import BytesIO
 
+from pyarrow.util import gc
+
 if len(sys.argv) < 2:
     print("Please supply download url as first CLI arg.", sys.argv)
     exit(1)
@@ -35,6 +37,8 @@ def generate_parquets(members: list[str]):
             df["date"] = date_str
             Df = df if Df is None else pd.concat((Df, df))
             pq.write_table(pa.Table.from_pandas(df), date_str + ".parquet")
+            del df
+            gc.collect()
     Df.reset_index(drop=True, inplace=True)
     tbl = pa.Table.from_pandas(Df)
     pq.write_table(tbl, zip_file.removesuffix(".zip") + ".parquet")
