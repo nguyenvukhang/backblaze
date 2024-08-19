@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 PLOT_FAILURES = False
 PLOT_POPULATION = False
-GATHER_ATTRIBUTES = False
+GATHER_ATTRIBUTES = True
 DATE_FMT = "%Y-%m-%d"
 FIRST_EVER = datetime(2013, 4, 10)
 LAST_EVER = datetime(2024, 3, 31)
@@ -97,6 +97,13 @@ def pq_path(t: datetime):
     return path.join(base, t.strftime("%Y-%m-%d") + ".parquet")
 
 
+def df_iter(
+    start=FIRST_EVER, end=LAST_EVER, progress=False
+) -> Iterable[tuple[datetime, DataFrame]]:
+    for t in day_iter(start, end, progress=progress):
+        yield t, read_pandas(pq_path(t))
+
+
 def plot_population(df: DataFrame, model: str):
     df = df[df.index == model]
 
@@ -138,7 +145,7 @@ def gather_attributes():
         print(model)
         data = {c: [] for c in all_cols}
         data["date"] = []
-        for t in day_iter():
+        for t in day_iter(start=datetime(2017, 2, 1), end=datetime(2020, 12, 31)):
             date_str = t.strftime(DATE_FMT)
             df = read_pandas(pq_path(t))
             df = df[df["model"] == model]
@@ -159,28 +166,31 @@ def gather_attributes():
         )
 
 
-df = read_pandas("output/attrs/ST4000DM000.parquet")
-x = df["smart_1_normalized"]
-present = df[df["smart_1_normalized"] == True]
-absent = df[df["smart_1_normalized"] == False]
-print(len(present["date"].values))
-print(len(absent["date"].values))
-# print(len(y["date"].values))
-# print(len(y["date"].unique()))
-# exit()
+MODEL = "ST8000DM002"
 
-_, ax = plt.subplots()
-format_axis(ax)
-dates = [datetime.strptime(x, DATE_FMT) for x in absent["date"].values]
-ax.hist(dates, bins=30, color="lightblue")
-# plt.title(f"{model} failures over the years, by quarter")
-# filename = model.strip().replace(" ", "_") + ".png"
-makedirs(path.join(OUTPUT_DIR, "failures"), exist_ok=True)
-# plt.savefig(path.join(OUTPUT_DIR, "failures", filename))
-plt.show()
-plt.close()
-exit()
-print(df)
+for t, df in df_iter(datetime(2017, 3, 2), datetime(2017, 3, 2)):
+    df = df[df["model"] == "ST8000DM002"]
+    print(df["failure"].value_counts())
+    print(t, len(df.index) > 0)
+    # if len(df.index) == 0:
+    #     continue
+    # print(df)
+    # break
+
+
+# exit()
+# _, ax = plt.subplots()
+# format_axis(ax)
+# dates = [datetime.strptime(x, DATE_FMT) for x in absent["date"].values]
+# ax.hist(dates, bins=30, color="lightblue")
+# # plt.title(f"{model} failures over the years, by quarter")
+# # filename = model.strip().replace(" ", "_") + ".png"
+# makedirs(path.join(OUTPUT_DIR, "failures"), exist_ok=True)
+# # plt.savefig(path.join(OUTPUT_DIR, "failures", filename))
+# plt.show()
+# plt.close()
+# exit()
+# print(df)
 
 
 # for model in models:
