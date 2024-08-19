@@ -1,10 +1,7 @@
-from typing import cast
 import pandas as pd, pyarrow.parquet as pq, pyarrow as pa, sys
 from os import path
 from zipfile import ZipFile
 from io import BytesIO
-
-from pyarrow.util import gc
 
 if len(sys.argv) < 2:
     print("Please supply download url as first CLI arg.", sys.argv)
@@ -22,26 +19,17 @@ def get_csvs(zip_file: str) -> list[str]:
         l = z.namelist()
         l = filter(lambda v: not v.startswith("__MACOSX"), l)
         l = filter(lambda v: v.endswith(".csv"), l)
-        csvs = list(l)
-        csvs.sort()
-        return csvs
+        return sorted(list(l))
 
 
 def generate_parquets(members: list[str]):
-    Df = cast(pd.DataFrame, None)
     with ZipFile(zip_file, "r") as z:
         for member in members:
             print("member:", member, flush=True)
             df = pd.read_csv(BytesIO(z.read(member)), delimiter=",")
             date_str = path.basename(member).removesuffix(".csv")
             df["date"] = date_str
-            Df = df if Df is None else pd.concat((Df, df))
             pq.write_table(pa.Table.from_pandas(df), date_str + ".parquet")
-            del df
-            gc.collect()
-    Df.reset_index(drop=True, inplace=True)
-    tbl = pa.Table.from_pandas(Df)
-    pq.write_table(tbl, zip_file.removesuffix(".zip") + ".parquet")
 
 
 members = get_csvs(zip_file)
