@@ -22,4 +22,9 @@ DF = cast(DataFrame, None)
 for df in assets_iter("ST4000DM000"):
     DF = df if DF is None else pd.concat((DF, df))
 
+print("Sorting...")
+DF.sort_values(by=["serial_number", "date"], inplace=True)
+print("Reindexing...")
+DF.reset_index(drop=True, inplace=True)
+print("Writing...")
 write_pandas(DF, "ST4000DM000.parquet")

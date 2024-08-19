@@ -38,8 +38,9 @@ curl(id=ASSET_ID, target=ASSET_NAME)
 DF = cast(DataFrame, None)
 for df in dataframes():
     df = df[df["model"] == "ST4000DM000"]
-    df = df[["date", "serial_number", "model", "capacity_bytes", "failure"]]
+    # df = df[["date", "serial_number", "model", "capacity_bytes", "failure"]]
     DF = df if DF is None else pd.concat((DF, df))
 
 DF.sort_values(by=["serial_number"], kind="stable", inplace=True)
+DF.reset_index(drop=True, inplace=True)
 write_pandas(DF, "ST4000DM000.parquet")
