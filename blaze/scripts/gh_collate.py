@@ -2,17 +2,20 @@ from typing import Iterable, cast
 from sys import argv
 import json, os, pandas as pd
 from blaze.utils import *
+from tqdm import tqdm
 
 data = json.loads(" ".join(argv[1:]))
 
 
 def assets_iter(key: str) -> Iterable[DataFrame]:
+    buffer = []
     for asset in data["include"]:
         pqs = filter(lambda v: v.endswith(".parquet"), os.listdir(asset["id"]))
         pqs = filter(lambda v: file_stem(v) == key, pqs)
         pqs = map(lambda v: path.join(asset["id"], v), pqs)
-        for pq_path in pqs:
-            yield read_pandas(pq_path)
+        buffer.extend(pqs)
+    for pq_path in tqdm(buffer, desc=key):
+        yield read_pandas(pq_path)
 
 
 DF = cast(DataFrame, None)
