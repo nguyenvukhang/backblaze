@@ -24,7 +24,7 @@ jobs:
 
   main:
     needs: [pre]
-    name: derivatives on ${{ matrix.name }}
+    name: ∂(${{ matrix.name }})
     runs-on: ubuntu-22.04
     strategy:
       # max-parallel: 2
