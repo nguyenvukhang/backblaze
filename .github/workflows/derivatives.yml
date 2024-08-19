@@ -27,7 +27,7 @@ jobs:
     name: derivatives on ${{ matrix.name }}
     runs-on: ubuntu-22.04
     strategy:
-      max-parallel: 2
+      # max-parallel: 2
       fail-fast: false
       matrix: ${{ fromJson(needs.pre.outputs.matrix) }}
     steps:
@@ -46,7 +46,7 @@ jobs:
       - uses: actions/checkout@v4
       - run: pip install pandas pyarrow tqdm
       - uses: actions/download-artifact@v4
-      - run: python3 collate.py '${{ needs.pre.outputs.matrix }}'
+      - run: python3 -m blaze.scripts.gh_collate '${{ needs.pre.outputs.matrix }}'
       - name: Publish to release
         uses: softprops/action-gh-release@v2
         with:

@@ -30,4 +30,6 @@ with ZipFile(ASSET_NAME, "r") as z:
 
         df = df[df["model"] == "ST4000DM000"]
         DF = df if DF is None else pd.concat((DF, df))
-    write_pandas(DF, file_stem(ASSET_NAME) + ".ST4000DM000.parquet")
+
+    DF.sort_values(by=["serial_number"], kind="stable", inplace=True)
+    write_pandas(DF, "ST4000DM000.parquet")
