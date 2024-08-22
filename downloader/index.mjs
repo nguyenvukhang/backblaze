@@ -2,13 +2,13 @@ import { Octokit } from 'octokit'
 import { spawnSync } from 'child_process'
 import { readFileSync, rmSync, statSync } from 'fs'
 
-const DOWNLOAD = false
+const DOWNLOAD = true
 const token = loadToken()
 const gh = new Octokit({ auth: token })
 
 function loadToken() {
   try {
-    return readFileSync('.env', 'utf8')
+    return readFileSync('.env', 'utf8').trim()
   } catch {
     return null
   }
@@ -25,7 +25,7 @@ async function main() {
   const rel = await gh.rest.repos.getReleaseByTag({
     owner: 'nguyenvukhang',
     repo: 'backblaze',
-    tag: 'v0.2',
+    tag: 'v1.0',
   })
   console.log('Found', rel.data.assets.length, 'assets')
   for (let i = 0; i < rel.data.assets.length; i++) {
